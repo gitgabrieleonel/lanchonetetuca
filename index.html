@@ -215,7 +215,8 @@
         }
         
         .modal-conteudo input, 
-        .modal-conteudo select {
+        .modal-conteudo select,
+        .modal-conteudo textarea {
             width: 100%;
             padding: 15px;
             margin: 8px 0;
@@ -246,7 +247,7 @@
             font-weight: bold;
         }
         
-        /* Mesas */
+        /* Mesas - CORRIGIDO para mostrar itens */
         .mesa-card {
             border: 1px solid #ddd;
             border-radius: 15px;
@@ -254,6 +255,21 @@
             padding: 15px;
             background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        
+        /* Efeito para mesas pagas (bloqueado/desbotado) */
+        .mesa-card.mesa-paga {
+            opacity: 0.5;
+            background: #f5f5f5;
+            border-color: #ccc;
+            filter: grayscale(30%);
+            pointer-events: none; /* Desabilita interação */
+        }
+        
+        .mesa-card.mesa-paga .btn-pequeno {
+            pointer-events: none; /* Botões também desabilitados */
+            background: #ccc !important;
         }
         
         .mesa-titulo {
@@ -389,11 +405,22 @@
         input, select {
             font-size: 16px !important; /* Evita zoom automático no iOS */
         }
+        
+        /* Indicador de mesa paga */
+        .selo-pago {
+            background: #27ae60;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1> 🍝 Lanchonete da Tuca 🍝</h1>
+        <h1>🍝 Lanchonete da Tuca 🍝</h1>
         <div class="subtitulo">Sistema de Gerenciamento</div>
         
         <!-- Menu com scroll horizontal -->
@@ -426,7 +453,7 @@
             </div>
         </div>
         
-        <!-- Painel Mesas -->
+        <!-- Painel Mesas - CORRIGIDO -->
         <div id="painel-mesas" class="painel">
             <div class="busca">
                 <input type="text" id="busca-mesas" placeholder="🔍 Buscar mesa ou cliente..." onkeyup="filtrarMesas()">
@@ -482,21 +509,21 @@
         </div>
     </div>
     
-    <!-- Modal Adicionar Item à Mesa -->
+    <!-- Modal Adicionar Item à Mesa - CORRIGIDO -->
     <div id="modal-add-item-mesa" class="modal">
         <div class="modal-conteudo">
             <h3>Adicionar Item à Mesa</h3>
-            <p id="mesa-info" style="margin-bottom: 15px; font-size: 16px;"></p>
+            <p id="mesa-info" style="margin-bottom: 15px; font-size: 16px; font-weight: bold;"></p>
             
             <div class="busca" style="margin-bottom: 10px;">
                 <input type="text" id="busca-produto-mesa" placeholder="🔍 Buscar produto..." onkeyup="filtrarProdutosMesa()">
             </div>
             
-            <select id="select-produto-mesa" size="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px;">
-                <option value="">Carregando...</option>
+            <select id="select-produto-mesa" size="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; margin-bottom: 10px;">
+                <option value="">Selecione um produto</option>
             </select>
             
-            <input type="number" id="quantidade-mesa" placeholder="Quantidade" min="1" value="1">
+            <input type="number" id="quantidade-mesa" placeholder="Quantidade" min="1" value="1" style="width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 15px;">
             
             <div class="modal-botoes">
                 <button onclick="fecharModalAddItem()" style="background: #95a5a6; color: white;">Cancelar</button>
@@ -569,8 +596,8 @@
                 <div class="busca" style="margin-bottom: 10px;">
                     <input type="text" id="busca-produto-fiado" placeholder="🔍 Buscar produto..." onkeyup="filtrarProdutosFiado()">
                 </div>
-                <select id="select-produto-fiado-detalhe" size="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-                    <option value="">Carregando...</option>
+                <select id="select-produto-fiado-detalhe" size="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px;">
+                    <option value="">Selecione um produto</option>
                 </select>
                 <input type="number" id="quantidade-fiado-detalhe" placeholder="Quantidade" min="1" value="1" style="width: 100%; padding: 12px; margin: 10px 0;">
                 <button onclick="adicionarItemFiadoExistente()" style="width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 8px; font-size: 15px;">Adicionar</button>
@@ -1337,7 +1364,7 @@
             }
         }
 
-        // FUNÇÕES DE BUSCA
+        // FUNÇÕES DE BUSCA - CORRIGIDAS para mostrar itens
         function filtrarMesas() {
             const busca = document.getElementById('busca-mesas').value.toLowerCase();
             const lista = document.getElementById('lista-mesas');
@@ -1362,29 +1389,38 @@
                 const pessoa = mesa.pessoas[0];
                 const pago = pessoa.pagamentos ? pessoa.pagamentos.reduce((acc, p) => acc + p.valor, 0) : 0;
                 const pendente = pessoa.total - pago;
+                const todosPagos = pendente <= 0;
+                
+                // Classe especial para mesas pagas
+                const classeMesa = todosPagos ? 'mesa-card mesa-paga' : 'mesa-card';
                 
                 let html = `
-                    <div class="mesa-card">
+                    <div class="${classeMesa}" data-id="${mesa.id}">
                         <div class="mesa-titulo">
-                            <span><strong>${mesa.identificador}</strong></span>
+                            <span><strong>${mesa.identificador}</strong> ${todosPagos ? '<span class="selo-pago">PAGO</span>' : ''}</span>
                             <div class="mesa-acoes">
-                                <button class="btn-pequeno" onclick="abrirModalAddItem('${mesa.id}')" style="background: #3498db; color: white;">+ Item</button>
-                                <span style="font-size: 16px;">R$ ${pendente.toFixed(2)}</span>
+                                ${!todosPagos ? `<button class="btn-pequeno" onclick="abrirModalAddItem('${mesa.id}')" style="background: #3498db; color: white;">+ Item</button>` : ''}
+                                <span style="font-size: 16px; ${todosPagos ? 'color: #27ae60;' : ''}">R$ ${todosPagos ? pago.toFixed(2) : pendente.toFixed(2)}</span>
                             </div>
                         </div>
                 `;
                 
-                pessoa.itens.forEach(item => {
-                    const itemClass = item.pago ? 'item-lista item-pago' : 'item-lista';
-                    html += `
-                        <div class="${itemClass}">
-                            <span>${item.nome} x${item.quantidade}</span>
-                            <span>R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
-                        </div>
-                    `;
-                });
+                // MOSTRAR ITENS - CORRIGIDO
+                if (pessoa.itens && pessoa.itens.length > 0) {
+                    pessoa.itens.forEach(item => {
+                        const itemClass = item.pago ? 'item-lista item-pago' : 'item-lista';
+                        html += `
+                            <div class="${itemClass}">
+                                <span>${item.nome} x${item.quantidade}</span>
+                                <span>R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += `<div style="padding: 10px; text-align: center; color: #999; font-style: italic;">Nenhum item adicionado</div>`;
+                }
                 
-                if (pago > 0) {
+                if (pago > 0 && !todosPagos) {
                     html += `<div style="font-size: 12px; color: #27ae60; text-align: right; margin-top: 5px;">Pago: R$ ${pago.toFixed(2)}</div>`;
                 }
                 
@@ -1445,18 +1481,16 @@
                         </div>
                         
                         <div style="margin-top: 10px;">
-                            <strong>Itens pendentes:</strong>
+                            <strong>Itens:</strong>
                 `;
                 
                 pessoa.itens.forEach(item => {
-                    if (!item.pago) {
-                        html += `
-                            <div class="item-lista">
-                                <span>${item.nome} x${item.quantidade}</span>
-                                <span>R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
-                            </div>
-                        `;
-                    }
+                    html += `
+                        <div class="item-lista">
+                            <span>${item.nome} x${item.quantidade} ${item.pago ? '(Pago)' : ''}</span>
+                            <span style="${item.pago ? 'color: #27ae60;' : ''}">R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+                        </div>
+                    `;
                 });
                 
                 html += `</div></div>`;
