@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Lanchonete da Tuca</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body { 
+            background: #f0f0f0; 
+            padding: 12px; 
+            min-height: 100vh;
+        }
+        
+        .container { 
+            max-width: 100%; 
+            margin: 0 auto; 
+        }
+        
+        h1 { 
+            font-size: 24px; 
+            margin-bottom: 5px; 
+            text-align: center; 
+            color: #333;
+        }
+        
+        .subtitulo { 
+            text-align: center; 
+            color: #666; 
+            font-size: 13px; 
+            margin-bottom: 20px; 
+        }
+        
+        /* Menu com scroll horizontal no celular */
+        .menu {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding: 5px 0 15px 0;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            white-space: nowrap;
+        }
+        
+        .menu::-webkit-scrollbar {
+            height: 4px;
+        }
+        
+        .menu::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+        
+        .menu button {
+            padding: 14px 20px;
+            border: none;
+            background: #ddd;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 100px;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .menu button.ativo {
+            background: #2c3e50;
+            color: white;
+            transform: scale(1.02);
+        }
+        
+        .painel {
+            display: none;
+            background: white;
+            padding: 18px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .painel.ativo { display: block; }
+        
+        /* Busca */
+        .busca {
+            margin-bottom: 18px;
+        }
+        
+        .busca input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #3498db;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+            -webkit-appearance: none;
+        }
+        
+        /* Produtos */
+        .produto-card {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #eee;
+        }
+        
+        .produto-info h3 { 
+            font-size: 17px; 
+            margin-bottom: 4px;
+        }
+        
+        .produto-info span { 
+            color: #27ae60; 
+            font-weight: bold; 
+            font-size: 16px;
+        }
+        
+        .produto-acoes {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .produto-acoes input {
+            width: 60px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            background: white;
+            -webkit-appearance: none;
+        }
+        
+        .produto-acoes button {
+            padding: 12px 18px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            min-width: 50px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .acoes-cardapio {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .acoes-cardapio button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn-verde { background: #27ae60; color: white; }
+        .btn-azul { background: #3498db; color: white; }
+        .btn-laranja { background: #f39c12; color: white; }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .modal-conteudo {
+            background: white;
+            margin: 10px auto;
+            padding: 20px;
+            border-radius: 20px;
+            max-width: 100%;
+            width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .modal-conteudo h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .modal-conteudo input, 
+        .modal-conteudo select {
+            width: 100%;
+            padding: 15px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            -webkit-appearance: none;
+        }
+        
+        .modal-conteudo select {
+            background: white;
+        }
+        
+        .modal-botoes {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .modal-botoes button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        /* Mesas */
+        .mesa-card {
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .mesa-titulo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .mesa-acoes {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .item-lista {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 15px;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .item-pago {
+            text-decoration: line-through;
+            color: #999;
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 8px;
+        }
+        
+        .pessoa-pagamento {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .pago, .pendente, .parcial {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .pago { background: #27ae60; color: white; }
+        .pendente { background: #e74c3c; color: white; }
+        .parcial { background: #f39c12; color: white; }
+        
+        .fiado-card {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid #f39c12;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .fiado-card:active {
+            background: #f0f0f0;
+            transform: scale(0.98);
+        }
+        
+        .fiado-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .fiado-valor {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        .btn-pequeno {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .rodape {
+            text-align: center;
+            margin-top: 25px;
+            padding: 15px;
+            color: #666;
+            font-size: 13px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .contador {
+            background: #3498db;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-left: 5px;
+        }
+        
+        .historico-card {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            border-left: 4px solid #3498db;
+        }
+        
+        /* Ajustes para selects com tamanho fixo */
+        #select-produto-mesa,
+        #select-produto-fiado-detalhe {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        /* Melhorias para touch */
+        button, .fiado-card, .icone-card {
+            touch-action: manipulation;
+            cursor: pointer;
+        }
+        
+        input, select {
+            font-size: 16px !important; /* Evita zoom automático no iOS */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1> 🍝 Lanchonete da Tuca 🍝</h1>
+        <div class="subtitulo">Sistema de Gerenciamento</div>
+        
+        <!-- Menu com scroll horizontal -->
+        <div class="menu">
+            <button onclick="mostrarPainel('cardapio')" id="btn-cardapio" class="ativo">📋 Cardápio</button>
+            <button onclick="mostrarPainel('mesas')" id="btn-mesas">🪑 Mesas <span id="contador-mesas" class="contador">0</span></button>
+            <button onclick="mostrarPainel('pagamento')" id="btn-pagamento">💰 Pagamento <span id="contador-pagamento" class="contador">0</span></button>
+            <button onclick="mostrarPainel('fiados')" id="btn-fiados">📝 Fiados <span id="contador-fiados" class="contador">0</span></button>
+            <button onclick="mostrarPainel('historico')" id="btn-historico">📜 Histórico</button>
+        </div>
+        
+        <!-- Painel Cardápio -->
+        <div id="painel-cardapio" class="painel ativo">
+            <div class="acoes-cardapio">
+                <button class="btn-verde" onclick="abrirModalProduto()">➕ Novo Produto</button>
+                <button class="btn-azul" onclick="abrirModalEditarCardapio()">✏️ Editar</button>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="identificador" placeholder="Nome ou mesa (ex: João, Mesa 5)" style="width: 100%; padding: 15px; font-size: 16px; border-radius: 12px; border: 2px solid #3498db;">
+            </div>
+            
+            <div class="busca">
+                <input type="text" id="busca" placeholder="🔍 Buscar produto..." onkeyup="filtrarCardapio()">
+            </div>
+            
+            <div id="lista-cardapio"></div>
+            <div id="sem-resultado" style="display: none; text-align: center; padding: 30px; color: #999; font-size: 16px;">
+                Nenhum produto encontrado
+            </div>
+        </div>
+        
+        <!-- Painel Mesas -->
+        <div id="painel-mesas" class="painel">
+            <div class="busca">
+                <input type="text" id="busca-mesas" placeholder="🔍 Buscar mesa ou cliente..." onkeyup="filtrarMesas()">
+            </div>
+            <div id="lista-mesas"></div>
+        </div>
+        
+        <!-- Painel Pagamento -->
+        <div id="painel-pagamento" class="painel">
+            <div class="busca">
+                <input type="text" id="busca-pagamento" placeholder="🔍 Buscar conta..." onkeyup="filtrarPagamento()">
+            </div>
+            <div id="lista-pagamento"></div>
+        </div>
+        
+        <!-- Painel Fiados -->
+        <div id="painel-fiados" class="painel">
+            <div class="busca">
+                <input type="text" id="busca-fiados" placeholder="🔍 Buscar cliente..." onkeyup="filtrarFiados()">
+            </div>
+            <div id="lista-fiados"></div>
+        </div>
+        
+        <!-- Painel Histórico -->
+        <div id="painel-historico" class="painel">
+            <div class="busca">
+                <input type="text" id="busca-historico" placeholder="🔍 Buscar no histórico..." onkeyup="filtrarHistorico()">
+            </div>
+            <div id="lista-historico"></div>
+        </div>
+    </div>
+    
+    <!-- Modal Novo Produto -->
+    <div id="modal-produto" class="modal">
+        <div class="modal-conteudo">
+            <h3 id="titulo-modal">Novo Produto</h3>
+            <input type="text" id="produto-nome" placeholder="Nome do produto">
+            <input type="number" id="produto-preco" placeholder="Preço (R$)" step="0.01">
+            
+            <div class="modal-botoes">
+                <button onclick="fecharModalProduto()" style="background: #95a5a6; color: white;">Cancelar</button>
+                <button onclick="salvarProduto()" style="background: #27ae60; color: white;">Salvar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Editar Cardápio -->
+    <div id="modal-editar" class="modal">
+        <div class="modal-conteudo">
+            <h3>Editar Cardápio</h3>
+            <div id="lista-editavel" style="max-height: 60vh; overflow-y: auto;"></div>
+            <button onclick="fecharModalEditar()" style="width: 100%; padding: 15px; margin-top: 15px; background: #95a5a6; color: white; border: none; border-radius: 10px; font-size: 16px;">Fechar</button>
+        </div>
+    </div>
+    
+    <!-- Modal Adicionar Item à Mesa -->
+    <div id="modal-add-item-mesa" class="modal">
+        <div class="modal-conteudo">
+            <h3>Adicionar Item à Mesa</h3>
+            <p id="mesa-info" style="margin-bottom: 15px; font-size: 16px;"></p>
+            
+            <div class="busca" style="margin-bottom: 10px;">
+                <input type="text" id="busca-produto-mesa" placeholder="🔍 Buscar produto..." onkeyup="filtrarProdutosMesa()">
+            </div>
+            
+            <select id="select-produto-mesa" size="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px;">
+                <option value="">Carregando...</option>
+            </select>
+            
+            <input type="number" id="quantidade-mesa" placeholder="Quantidade" min="1" value="1">
+            
+            <div class="modal-botoes">
+                <button onclick="fecharModalAddItem()" style="background: #95a5a6; color: white;">Cancelar</button>
+                <button onclick="confirmarAddItemMesa()" style="background: #27ae60; color: white;">Adicionar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Pagamento Detalhado -->
+    <div id="modal-pagamento" class="modal">
+        <div class="modal-conteudo">
+            <h3>Pagamento</h3>
+            <div id="detalhes-pagamento"></div>
+            
+            <div style="margin: 15px 0; padding: 15px; background: #f0f0f0; border-radius: 10px;">
+                <p style="margin: 5px 0;"><strong>Total da Conta:</strong> R$ <span id="total-conta">0,00</span></p>
+                <p style="margin: 5px 0;"><strong>Valor Pendente:</strong> R$ <span id="valor-pendente">0,00</span></p>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <label style="font-weight: bold; display: block; margin-bottom: 8px;">Selecionar itens:</label>
+                <div id="itens-pagamento" style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 10px; padding: 10px;"></div>
+            </div>
+            
+            <input type="number" id="valor-pagamento" placeholder="Ou digite valor avulso (R$)" step="0.01" style="width: 100%; padding: 15px; margin: 15px 0;">
+            
+            <div style="margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 10px;">
+                <p><strong>💡 Resumo:</strong></p>
+                <p id="resumo-pagamento">Nenhum item selecionado</p>
+            </div>
+            
+            <div style="margin: 15px 0;">
+                <button class="btn-laranja" onclick="marcarComoFiado()" style="width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 16px;">💸 Marcar como Fiado</button>
+            </div>
+            
+            <div class="modal-botoes">
+                <button onclick="fecharModalPagamento()" style="background: #95a5a6; color: white;">Cancelar</button>
+                <button onclick="processarPagamento()" style="background: #27ae60; color: white;">Pagar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Novo Fiado -->
+    <div id="modal-novo-fiado" class="modal">
+        <div class="modal-conteudo">
+            <h3>Confirmar Fiado</h3>
+            <p style="font-size: 16px; margin: 10px 0;">Cliente: <strong id="fiado-cliente-nome"></strong></p>
+            <p style="font-size: 16px; margin: 10px 0;">Valor: R$ <strong id="fiado-cliente-valor"></strong></p>
+            
+            <div style="margin: 20px 0; padding: 15px; background: #f8f8f8; border-radius: 10px;">
+                <p><strong>Itens:</strong></p>
+                <div id="itens-fiado-resumo"></div>
+            </div>
+            
+            <div class="modal-botoes">
+                <button onclick="fecharModalNovoFiado()" style="background: #95a5a6; color: white;">Cancelar</button>
+                <button onclick="confirmarFiado()" style="background: #f39c12; color: white;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Ver Fiado -->
+    <div id="modal-ver-fiado" class="modal">
+        <div class="modal-conteudo">
+            <h3 id="fiado-titulo"></h3>
+            <div id="fiado-detalhes" style="max-height: 200px; overflow-y: auto;"></div>
+            
+            <div style="margin: 15px 0;">
+                <h4 style="margin-bottom: 10px;">Adicionar Item</h4>
+                <div class="busca" style="margin-bottom: 10px;">
+                    <input type="text" id="busca-produto-fiado" placeholder="🔍 Buscar produto..." onkeyup="filtrarProdutosFiado()">
+                </div>
+                <select id="select-produto-fiado-detalhe" size="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                    <option value="">Carregando...</option>
+                </select>
+                <input type="number" id="quantidade-fiado-detalhe" placeholder="Quantidade" min="1" value="1" style="width: 100%; padding: 12px; margin: 10px 0;">
+                <button onclick="adicionarItemFiadoExistente()" style="width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 8px; font-size: 15px;">Adicionar</button>
+            </div>
+            
+            <input type="number" id="valor-pagamento-fiado" placeholder="Valor a pagar (R$)" step="0.01" style="width: 100%; padding: 15px; margin: 10px 0;">
+            
+            <div class="modal-botoes">
+                <button onclick="fecharModalVerFiado()" style="background: #95a5a6; color: white;">Fechar</button>
+                <button onclick="pagarFiado()" style="background: #27ae60; color: white;">Pagar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="rodape">
+        Desenvolvido por: O Gabriel Leonel
+    </div>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAiegd8FlrsbuEIBd_YyMah6fbrTBf6nEM",
+            authDomain: "turcalanchonete.firebaseapp.com",
+            projectId: "turcalanchonete",
+            storageBucket: "turcalanchonete.firebasestorage.app",
+            messagingSenderId: "405070421964",
+            appId: "1:405070421964:web:50449f7c7ef4f6edd0c769",
+            measurementId: "G-02CSY03X3D"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Variáveis globais
+        let cardapio = [];
+        let mesas = [];
+        let fiados = [];
+        let historico = [];
+        let produtoEditando = null;
+        let mesaSelecionada = null;
+        let fiadoSelecionado = null;
+        let fiadoTemp = null;
+
+        // Carregar dados iniciais
+        window.onload = function() {
+            carregarCardapio();
+            carregarMesas();
+            carregarFiados();
+            carregarHistorico();
+        };
+
+        // CARREGAR DADOS DO FIREBASE
+        async function carregarCardapio() {
+            try {
+                const snapshot = await db.collection('cardapio').orderBy('nome').get();
+                cardapio = [];
+                snapshot.forEach(doc => {
+                    cardapio.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                if (cardapio.length === 0) {
+                    await criarProdutosIniciais();
+                }
+                
+                filtrarCardapio();
+                atualizarSelects();
+            } catch (error) {
+                console.error('Erro ao carregar cardápio:', error);
+            }
+        }
+
+        async function carregarMesas() {
+            try {
+                const snapshot = await db.collection('mesas').get();
+                mesas = [];
+                snapshot.forEach(doc => {
+                    mesas.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                atualizarContadores();
+                filtrarMesas();
+                filtrarPagamento();
+            } catch (error) {
+                console.error('Erro ao carregar mesas:', error);
+            }
+        }
+
+        async function carregarFiados() {
+            try {
+                const snapshot = await db.collection('fiados').get();
+                fiados = [];
+                snapshot.forEach(doc => {
+                    fiados.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                atualizarContadores();
+                filtrarFiados();
+            } catch (error) {
+                console.error('Erro ao carregar fiados:', error);
+            }
+        }
+
+        async function carregarHistorico() {
+            try {
+                const snapshot = await db.collection('historico_pagamentos')
+                    .orderBy('data', 'desc')
+                    .limit(100)
+                    .get();
+                historico = [];
+                snapshot.forEach(doc => {
+                    historico.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                filtrarHistorico();
+            } catch (error) {
+                console.error('Erro ao carregar histórico:', error);
+            }
+        }
+
+        function atualizarContadores() {
+            document.getElementById('contador-mesas').textContent = mesas.length;
+            
+            const contasPendentes = mesas.filter(m => {
+                const pessoa = m.pessoas[0];
+                const pago = pessoa.pagamentos ? 
+                    pessoa.pagamentos.reduce((acc, p) => acc + p.valor, 0) : 0;
+                return pago < pessoa.total;
+            }).length;
+            
+            document.getElementById('contador-pagamento').textContent = contasPendentes;
+            document.getElementById('contador-fiados').textContent = fiados.length;
+        }
+
+        async function criarProdutosIniciais() {
+            const produtosIniciais = [
+                { nome: 'X-Burger', preco: 15.00 },
+                { nome: 'X-Salada', preco: 18.00 },
+                { nome: 'X-Bacon', preco: 20.00 },
+                { nome: 'Batata', preco: 12.00 },
+                { nome: 'Refri', preco: 6.00 }
+            ];
+            
+            for (let produto of produtosIniciais) {
+                await db.collection('cardapio').add(produto);
+            }
+            
+            await carregarCardapio();
+        }
+
+        function atualizarSelects() {
+            atualizarSelectProdutosMesa();
+            atualizarSelectProdutosFiado();
+        }
+
+        function atualizarSelectProdutosMesa(busca = '') {
+            const select = document.getElementById('select-produto-mesa');
+            if (!select) return;
+            
+            select.innerHTML = '';
+            
+            let produtosFiltrados = cardapio;
+            if (busca) {
+                produtosFiltrados = cardapio.filter(p => 
+                    p.nome.toLowerCase().includes(busca.toLowerCase())
+                );
+            }
+            
+            if (produtosFiltrados.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Nenhum produto encontrado';
+                option.disabled = true;
+                select.appendChild(option);
+            } else {
+                produtosFiltrados.forEach(produto => {
+                    const option = document.createElement('option');
+                    option.value = produto.id;
+                    option.textContent = `${produto.nome} - R$ ${produto.preco.toFixed(2)}`;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        function atualizarSelectProdutosFiado(busca = '') {
+            const select = document.getElementById('select-produto-fiado-detalhe');
+            if (!select) return;
+            
+            select.innerHTML = '';
+            
+            let produtosFiltrados = cardapio;
+            if (busca) {
+                produtosFiltrados = cardapio.filter(p => 
+                    p.nome.toLowerCase().includes(busca.toLowerCase())
+                );
+            }
+            
+            if (produtosFiltrados.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Nenhum produto encontrado';
+                option.disabled = true;
+                select.appendChild(option);
+            } else {
+                produtosFiltrados.forEach(produto => {
+                    const option = document.createElement('option');
+                    option.value = produto.id;
+                    option.textContent = `${produto.nome} - R$ ${produto.preco.toFixed(2)}`;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        function filtrarProdutosMesa() {
+            const busca = document.getElementById('busca-produto-mesa').value;
+            atualizarSelectProdutosMesa(busca);
+        }
+
+        function filtrarProdutosFiado() {
+            const busca = document.getElementById('busca-produto-fiado').value;
+            atualizarSelectProdutosFiado(busca);
+        }
+
+        // ADICIONAR PEDIDO
+        async function adicionarPedido(produtoId) {
+            const identificador = document.getElementById('identificador').value.trim();
+            if (!identificador) {
+                alert('Digite o nome da pessoa ou mesa!');
+                return;
+            }
+            
+            const quantidade = parseInt(document.getElementById(`qtd-${produtoId}`).value);
+            const produto = cardapio.find(p => p.id === produtoId);
+            
+            try {
+                let mesa = mesas.find(m => m.identificador === identificador);
+                let mesaId;
+                
+                if (!mesa) {
+                    const novaMesa = {
+                        identificador: identificador,
+                        pessoas: [{
+                            nome: identificador,
+                            itens: [],
+                            total: 0,
+                            pago: false,
+                            pagamentos: []
+                        }],
+                        total: 0,
+                        dataAbertura: new Date().toISOString()
+                    };
+                    
+                    const docRef = await db.collection('mesas').add(novaMesa);
+                    mesaId = docRef.id;
+                    
+                    mesa = {
+                        id: mesaId,
+                        ...novaMesa
+                    };
+                    mesas.push(mesa);
+                } else {
+                    mesaId = mesa.id;
+                }
+                
+                const pessoa = mesa.pessoas[0];
+                const novoItem = {
+                    nome: produto.nome,
+                    preco: produto.preco,
+                    quantidade: quantidade,
+                    produtoId: produtoId,
+                    data: new Date().toISOString(),
+                    pago: false
+                };
+                
+                pessoa.itens.push(novoItem);
+                
+                const valorItem = produto.preco * quantidade;
+                pessoa.total += valorItem;
+                mesa.total += valorItem;
+                
+                await db.collection('vendas').add({
+                    identificador: identificador,
+                    produto: produto.nome,
+                    quantidade: quantidade,
+                    valorUnitario: produto.preco,
+                    valorTotal: valorItem,
+                    data: new Date().toISOString(),
+                    mesaId: mesaId
+                });
+                
+                await db.collection('mesas').doc(mesaId).update({
+                    pessoas: mesa.pessoas,
+                    total: mesa.total
+                });
+                
+                alert(`✅ Adicionado: ${quantidade}x ${produto.nome} para ${identificador}`);
+                document.getElementById(`qtd-${produtoId}`).value = 1;
+                
+                await carregarMesas();
+                
+            } catch (error) {
+                console.error('Erro ao salvar venda:', error);
+                alert('Erro ao registrar pedido');
+            }
+        }
+
+        // FUNÇÕES DE MESA - ADICIONAR ITEM
+        function abrirModalAddItem(mesaId) {
+            mesaSelecionada = mesas.find(m => m.id === mesaId);
+            if (!mesaSelecionada) return;
+            
+            document.getElementById('mesa-info').textContent = `Mesa: ${mesaSelecionada.identificador}`;
+            document.getElementById('busca-produto-mesa').value = '';
+            atualizarSelectProdutosMesa();
+            document.getElementById('quantidade-mesa').value = '1';
+            document.getElementById('modal-add-item-mesa').style.display = 'block';
+        }
+
+        function fecharModalAddItem() {
+            document.getElementById('modal-add-item-mesa').style.display = 'none';
+            mesaSelecionada = null;
+        }
+
+        async function confirmarAddItemMesa() {
+            if (!mesaSelecionada) return;
+            
+            const produtoId = document.getElementById('select-produto-mesa').value;
+            const quantidade = parseInt(document.getElementById('quantidade-mesa').value);
+            
+            if (!produtoId || !quantidade) {
+                alert('Selecione um produto e informe a quantidade!');
+                return;
+            }
+            
+            const produto = cardapio.find(p => p.id === produtoId);
+            
+            try {
+                const pessoa = mesaSelecionada.pessoas[0];
+                const novoItem = {
+                    nome: produto.nome,
+                    preco: produto.preco,
+                    quantidade: quantidade,
+                    produtoId: produtoId,
+                    data: new Date().toISOString(),
+                    pago: false
+                };
+                
+                pessoa.itens.push(novoItem);
+                
+                const valorItem = produto.preco * quantidade;
+                pessoa.total += valorItem;
+                mesaSelecionada.total += valorItem;
+                
+                await db.collection('mesas').doc(mesaSelecionada.id).update({
+                    pessoas: mesaSelecionada.pessoas,
+                    total: mesaSelecionada.total
+                });
+                
+                await db.collection('vendas').add({
+                    identificador: mesaSelecionada.identificador,
+                    produto: produto.nome,
+                    quantidade: quantidade,
+                    valorUnitario: produto.preco,
+                    valorTotal: valorItem,
+                    data: new Date().toISOString(),
+                    mesaId: mesaSelecionada.id
+                });
+                
+                fecharModalAddItem();
+                await carregarMesas();
+                alert('Item adicionado com sucesso!');
+                
+            } catch (error) {
+                console.error('Erro ao adicionar item:', error);
+                alert('Erro ao adicionar item');
+            }
+        }
+
+        // FUNÇÕES DE PAGAMENTO DETALHADO
+        function abrirModalPagamento(mesaId) {
+            const mesa = mesas.find(m => m.id === mesaId);
+            if (!mesa) return;
+            
+            mesaSelecionada = mesa;
+            const pessoa = mesa.pessoas[0];
+            
+            document.getElementById('total-conta').textContent = pessoa.total.toFixed(2);
+            
+            const pago = pessoa.pagamentos ? pessoa.pagamentos.reduce((acc, p) => acc + p.valor, 0) : 0;
+            const pendente = pessoa.total - pago;
+            document.getElementById('valor-pendente').textContent = pendente.toFixed(2);
+            
+            const itensDiv = document.getElementById('itens-pagamento');
+            itensDiv.innerHTML = '';
+            
+            pessoa.itens.forEach((item, index) => {
+                if (!item.pago) {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.style.margin = '8px 0';
+                    itemDiv.style.padding = '5px';
+                    itemDiv.style.borderBottom = '1px solid #eee';
+                    itemDiv.innerHTML = `
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px;">
+                            <input type="checkbox" class="item-pagamento" data-index="${index}" data-valor="${item.preco * item.quantidade}" onchange="atualizarResumoPagamento()" style="width: 20px; height: 20px;">
+                            <span style="flex: 1;">${item.nome} x${item.quantidade}</span>
+                            <span style="font-weight: bold; color: #27ae60;">R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+                        </label>
+                    `;
+                    itensDiv.appendChild(itemDiv);
+                }
+            });
+            
+            document.getElementById('valor-pagamento').value = '';
+            document.getElementById('resumo-pagamento').innerHTML = 'Nenhum item selecionado';
+            document.getElementById('modal-pagamento').style.display = 'block';
+        }
+
+        function atualizarResumoPagamento() {
+            if (!mesaSelecionada) return;
+            
+            const checkboxes = document.querySelectorAll('.item-pagamento:checked');
+            let total = 0;
+            let itens = [];
+            
+            checkboxes.forEach(cb => {
+                total += parseFloat(cb.dataset.valor);
+                const index = cb.dataset.index;
+                const item = mesaSelecionada.pessoas[0].itens[index];
+                itens.push(`${item.nome} x${item.quantidade}`);
+            });
+            
+            if (checkboxes.length > 0) {
+                document.getElementById('resumo-pagamento').innerHTML = 
+                    `✅ Pagando: ${itens.join(', ')}<br><strong>Total: R$ ${total.toFixed(2)}</strong>`;
+            } else {
+                document.getElementById('resumo-pagamento').innerHTML = 'Nenhum item selecionado';
+            }
+        }
+
+        function fecharModalPagamento() {
+            document.getElementById('modal-pagamento').style.display = 'none';
+            mesaSelecionada = null;
+        }
+
+        // FUNÇÃO: MARCAR COMO FIADO
+        function marcarComoFiado() {
+            if (!mesaSelecionada) return;
+            
+            const pessoa = mesaSelecionada.pessoas[0];
+            const pago = pessoa.pagamentos ? pessoa.pagamentos.reduce((acc, p) => acc + p.valor, 0) : 0;
+            const pendente = pessoa.total - pago;
+            
+            if (pendente <= 0) {
+                alert('Esta conta já está paga!');
+                return;
+            }
+            
+            const itensPendentes = pessoa.itens.filter(item => !item.pago);
+            
+            fiadoTemp = {
+                mesaId: mesaSelecionada.id,
+                identificador: mesaSelecionada.identificador,
+                valor: pendente,
+                itens: itensPendentes
+            };
+            
+            document.getElementById('fiado-cliente-nome').textContent = mesaSelecionada.identificador;
+            document.getElementById('fiado-cliente-valor').textContent = pendente.toFixed(2);
+            
+            const itensResumo = document.getElementById('itens-fiado-resumo');
+            itensResumo.innerHTML = '';
+            itensPendentes.forEach(item => {
+                itensResumo.innerHTML += `<div style="padding: 3px 0;">${item.nome} x${item.quantidade} - R$ ${(item.preco * item.quantidade).toFixed(2)}</div>`;
+            });
+            
+            fecharModalPagamento();
+            document.getElementById('modal-novo-fiado').style.display = 'block';
+        }
+
+        function fecharModalNovoFiado() {
+            document.getElementById('modal-novo-fiado').style.display = 'none';
+            fiadoTemp = null;
+        }
+
+        async function confirmarFiado() {
+            if (!fiadoTemp) return;
+            
+            try {
+                await db.collection('fiados').add({
+                    nome: fiadoTemp.identificador,
+                    itens: fiadoTemp.itens,
+                    total: fiadoTemp.valor,
+                    pago: 0,
+                    pendente: fiadoTemp.valor,
+                    data: new Date().toISOString(),
+                    origemMesa: fiadoTemp.mesaId,
+                    historico: [{
+                        tipo: 'fiado',
+                        data: new Date().toISOString(),
+                        valor: fiadoTemp.valor,
+                        itens: fiadoTemp.itens
+                    }]
+                });
+                
+                await db.collection('mesas').doc(fiadoTemp.mesaId).delete();
+                
+                fecharModalNovoFiado();
+                await carregarMesas();
+                await carregarFiados();
+                
+                alert('Conta movida para Fiados com sucesso!');
+                mostrarPainel('fiados');
+                
+            } catch (error) {
+                console.error('Erro ao criar fiado:', error);
+                alert('Erro ao processar fiado');
+            }
+        }
+
+        async function processarPagamento() {
+            if (!mesaSelecionada) return;
+            
+            const valorPagar = parseFloat(document.getElementById('valor-pagamento').value) || 0;
+            const itensSelecionados = Array.from(document.querySelectorAll('.item-pagamento:checked'));
+            
+            if (itensSelecionados.length === 0 && valorPagar <= 0) {
+                alert('Selecione itens ou informe um valor para pagar!');
+                return;
+            }
+            
+            try {
+                const pessoa = mesaSelecionada.pessoas[0];
+                
+                if (!pessoa.pagamentos) {
+                    pessoa.pagamentos = [];
+                }
+                
+                let totalPago = 0;
+                let itensPagos = [];
+                
+                if (itensSelecionados.length > 0) {
+                    itensSelecionados.forEach(checkbox => {
+                        const index = checkbox.dataset.index;
+                        const item = pessoa.itens[index];
+                        item.pago = true;
+                        const valorItem = item.preco * item.quantidade;
+                        totalPago += valorItem;
+                        itensPagos.push({
+                            nome: item.nome,
+                            quantidade: item.quantidade,
+                            valor: valorItem
+                        });
+                    });
+                }
+                
+                if (valorPagar > 0) {
+                    totalPago += valorPagar;
+                }
+                
+                pessoa.pagamentos.push({
+                    valor: totalPago,
+                    data: new Date().toISOString(),
+                    tipo: itensSelecionados.length > 0 ? 'itens' : 'avulso',
+                    itens: itensPagos,
+                    valorAvulso: valorPagar > 0 ? valorPagar : 0
+                });
+                
+                await db.collection('historico_pagamentos').add({
+                    identificador: mesaSelecionada.identificador,
+                    valor: totalPago,
+                    itens: itensPagos,
+                    data: new Date().toISOString(),
+                    tipo: 'pagamento',
+                    mesaId: mesaSelecionada.id
+                });
+                
+                const todosPagos = pessoa.itens.every(item => item.pago);
+                
+                if (todosPagos) {
+                    await db.collection('historico_mesas').add({
+                        ...mesaSelecionada,
+                        dataFechamento: new Date().toISOString(),
+                        pagamentos: pessoa.pagamentos
+                    });
+                    
+                    await db.collection('mesas').doc(mesaSelecionada.id).delete();
+                } else {
+                    await db.collection('mesas').doc(mesaSelecionada.id).update({
+                        pessoas: mesaSelecionada.pessoas,
+                        total: pessoa.itens.reduce((acc, item) => 
+                            !item.pago ? acc + (item.preco * item.quantidade) : acc, 0)
+                    });
+                }
+                
+                fecharModalPagamento();
+                await carregarMesas();
+                await carregarHistorico();
+                
+                if (todosPagos) {
+                    alert('✅ Pagamento total realizado! Mesa fechada.');
+                } else {
+                    alert('✅ Pagamento parcial registrado!');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao processar pagamento:', error);
+                alert('Erro ao processar pagamento');
+            }
+        }
+
+        // FUNÇÕES DE FIADO
+        function abrirModalVerFiado(fiadoId) {
+            fiadoSelecionado = fiados.find(f => f.id === fiadoId);
+            if (!fiadoSelecionado) return;
+            
+            document.getElementById('fiado-titulo').textContent = `Cliente: ${fiadoSelecionado.nome}`;
+            
+            const detalhes = document.getElementById('fiado-detalhes');
+            detalhes.innerHTML = '';
+            
+            fiadoSelecionado.itens.forEach((item, index) => {
+                detalhes.innerHTML += `
+                    <div style="padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
+                        <span>${item.nome} x${item.quantidade}</span>
+                        <span style="font-weight: bold;">R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+                    </div>
+                `;
+            });
+            
+            detalhes.innerHTML += `
+                <div style="margin-top: 15px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+                    <p><strong>Total:</strong> R$ ${fiadoSelecionado.total.toFixed(2)}</p>
+                    <p><strong>Pago:</strong> R$ ${fiadoSelecionado.pago.toFixed(2)}</p>
+                    <p><strong>Pendente:</strong> R$ ${fiadoSelecionado.pendente.toFixed(2)}</p>
+                </div>
+            `;
+            
+            document.getElementById('busca-produto-fiado').value = '';
+            atualizarSelectProdutosFiado();
+            document.getElementById('quantidade-fiado-detalhe').value = '1';
+            document.getElementById('valor-pagamento-fiado').value = fiadoSelecionado.pendente.toFixed(2);
+            
+            document.getElementById('modal-ver-fiado').style.display = 'block';
+        }
+
+        function fecharModalVerFiado() {
+            document.getElementById('modal-ver-fiado').style.display = 'none';
+            fiadoSelecionado = null;
+        }
+
+        async function adicionarItemFiadoExistente() {
+            if (!fiadoSelecionado) return;
+            
+            const produtoId = document.getElementById('select-produto-fiado-detalhe').value;
+            const quantidade = parseInt(document.getElementById('quantidade-fiado-detalhe').value);
+            
+            if (!produtoId || !quantidade) {
+                alert('Selecione um produto!');
+                return;
+            }
+            
+            const produto = cardapio.find(p => p.id === produtoId);
+            const valorItem = produto.preco * quantidade;
+            
+            try {
+                const novoItem = {
+                    produtoId: produto.id,
+                    nome: produto.nome,
+                    preco: produto.preco,
+                    quantidade: quantidade,
+                    data: new Date().toISOString(),
+                    pago: false
+                };
+                
+                fiadoSelecionado.itens.push(novoItem);
+                fiadoSelecionado.total += valorItem;
+                fiadoSelecionado.pendente += valorItem;
+                
+                if (!fiadoSelecionado.historico) fiadoSelecionado.historico = [];
+                fiadoSelecionado.historico.push({
+                    tipo: 'adicao',
+                    data: new Date().toISOString(),
+                    valor: valorItem,
+                    item: produto.nome,
+                    quantidade: quantidade
+                });
+                
+                await db.collection('fiados').doc(fiadoSelecionado.id).update({
+                    itens: fiadoSelecionado.itens,
+                    total: fiadoSelecionado.total,
+                    pendente: fiadoSelecionado.pendente,
+                    historico: fiadoSelecionado.historico
+                });
+                
+                abrirModalVerFiado(fiadoSelecionado.id);
+                alert('Item adicionado!');
+                
+            } catch (error) {
+                console.error('Erro ao adicionar item:', error);
+                alert('Erro ao adicionar item');
+            }
+        }
+
+        async function pagarFiado() {
+            if (!fiadoSelecionado) return;
+            
+            const valorPagar = parseFloat(document.getElementById('valor-pagamento-fiado').value);
+            
+            if (valorPagar <= 0 || valorPagar > fiadoSelecionado.pendente) {
+                alert('Valor inválido!');
+                return;
+            }
+            
+            try {
+                fiadoSelecionado.pago += valorPagar;
+                fiadoSelecionado.pendente -= valorPagar;
+                
+                if (!fiadoSelecionado.historico) fiadoSelecionado.historico = [];
+                fiadoSelecionado.historico.push({
+                    tipo: 'pagamento',
+                    data: new Date().toISOString(),
+                    valor: valorPagar
+                });
+                
+                await db.collection('historico_pagamentos').add({
+                    identificador: fiadoSelecionado.nome,
+                    valor: valorPagar,
+                    data: new Date().toISOString(),
+                    tipo: 'pagamento_fiado',
+                    fiadoId: fiadoSelecionado.id
+                });
+                
+                if (fiadoSelecionado.pendente <= 0) {
+                    await db.collection('fiados_quitados').add({
+                        ...fiadoSelecionado,
+                        dataQuitacao: new Date().toISOString()
+                    });
+                    await db.collection('fiados').doc(fiadoSelecionado.id).delete();
+                } else {
+                    await db.collection('fiados').doc(fiadoSelecionado.id).update({
+                        pago: fiadoSelecionado.pago,
+                        pendente: fiadoSelecionado.pendente,
+                        historico: fiadoSelecionado.historico
+                    });
+                }
+                
+                fecharModalVerFiado();
+                await carregarFiados();
+                await carregarHistorico();
+                alert('Pagamento registrado!');
+                
+            } catch (error) {
+                console.error('Erro ao registrar pagamento:', error);
+                alert('Erro ao registrar pagamento');
+            }
+        }
+
+        // FUNÇÕES DE BUSCA
+        function filtrarMesas() {
+            const busca = document.getElementById('busca-mesas').value.toLowerCase();
+            const lista = document.getElementById('lista-mesas');
+            
+            if (!lista) return;
+            
+            let mesasFiltradas = mesas;
+            if (busca) {
+                mesasFiltradas = mesas.filter(m => 
+                    m.identificador.toLowerCase().includes(busca)
+                );
+            }
+            
+            lista.innerHTML = '';
+            
+            if (mesasFiltradas.length === 0) {
+                lista.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Nenhuma mesa encontrada</p>';
+                return;
+            }
+            
+            mesasFiltradas.forEach(mesa => {
+                const pessoa = mesa.pessoas[0];
+                const pago = pessoa.pagamentos ? pessoa.pagamentos.reduce((acc, p) => acc + p.valor, 0) : 0;
+                const pendente = pessoa.total - pago;
+                
+                let html = `
+                    <div class="mesa-card">
+                        <div class="mesa-titulo">
+                            <span><strong>${mesa.identificador}</strong></span>
+                            <div class="mesa-acoes">
+                                <button class="btn-pequeno" onclick="abrirModalAddItem('${mesa.id}')" style="background: #3498db; color: white;">+ Item</button>
+                                <span style="font-size: 16px;">R$ ${pendente.toFixed(2)}</span>
+                            </div>
+                        </div>
+                `;
+                
+                pessoa.itens.forEach(item => {
+                    const itemClass = item.pago ? 'item-lista item-pago' : 'item-lista';
+                    html += `
+                        <div class="${itemClass}">
+                            <span>${item.nome} x${item.quantidade}</span>
+                            <span>R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+                
+                if (pago > 0) {
+                    html += `<div style="font-size: 12px; color: #27ae60; text-align: right; margin-top: 5px;">Pago: R$ ${pago.toFixed(2)}</div>`;
+                }
+                
+                html += `</div>`;
+                lista.innerHTML += html;
+            });
+        }
+
+        function filtrarPagamento() {
+            const busca = document.getElementById('busca-pagamento').value.toLowerCase();
+            const lista = document.getElementById('lista-pagamento');
+            
+            if (!lista) return;
+            
+            let mesasFiltradas = mesas.filter(m => {
+                const pessoa = m.pessoas[0];
+                const pago = pessoa.pagamentos ? pessoa.pagamentos.reduce((acc, p) => acc + p.valor, 0) : 0;
+                return pago < pessoa.total;
+            });
+            
+            if (busca) {
+                mesasFiltradas = mesasFiltradas.filter(m => 
+                    m.identificador.toLowerCase().includes(busca)
+                );
+            }
+            
+            lista.innerHTML = '';
+            
+            if (mesasFiltradas.length === 0) {
+                lista.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Nenhuma conta pendente</p>';
+                return;
+            }
+            
+            mesasFiltradas.forEach(mesa => {
+                const pessoa = mesa.pessoas[0];
+                const pago = pessoa.pagamentos ? pessoa.pagamentos.reduce((acc, p) => acc + p.valor, 0) : 0;
+                const pendente = pessoa.total - pago;
+                
+                let statusClass = pendente === pessoa.total ? 'pendente' : 'parcial';
+                let statusText = pendente === pessoa.total ? 'Pendente' : 'Parcial';
+                
+                let html = `
+                    <div class="mesa-card">
+                        <div class="mesa-titulo">
+                            <span><strong>${mesa.identificador}</strong></span>
+                            <span>R$ ${pessoa.total.toFixed(2)}</span>
+                        </div>
+                        
+                        <div class="pessoa-pagamento">
+                            <div>
+                                <strong>${pessoa.nome}</strong><br>
+                                <span style="font-size: 13px;">Pago: R$ ${pago.toFixed(2)} | Pendente: R$ ${pendente.toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <span class="${statusClass}">${statusText}</span>
+                                <button class="verde" onclick="abrirModalPagamento('${mesa.id}')" style="padding: 8px 15px; background: #27ae60; color: white; border: none; border-radius: 5px;">Pagar</button>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 10px;">
+                            <strong>Itens pendentes:</strong>
+                `;
+                
+                pessoa.itens.forEach(item => {
+                    if (!item.pago) {
+                        html += `
+                            <div class="item-lista">
+                                <span>${item.nome} x${item.quantidade}</span>
+                                <span>R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+                            </div>
+                        `;
+                    }
+                });
+                
+                html += `</div></div>`;
+                lista.innerHTML += html;
+            });
+        }
+
+        function filtrarFiados() {
+            const busca = document.getElementById('busca-fiados').value.toLowerCase();
+            const lista = document.getElementById('lista-fiados');
+            
+            if (!lista) return;
+            
+            let fiadosFiltrados = fiados;
+            if (busca) {
+                fiadosFiltrados = fiados.filter(f => 
+                    f.nome.toLowerCase().includes(busca)
+                );
+            }
+            
+            lista.innerHTML = '';
+            
+            if (fiadosFiltrados.length === 0) {
+                lista.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Nenhum fiado encontrado</p>';
+                return;
+            }
+            
+            fiadosFiltrados.forEach(fiado => {
+                lista.innerHTML += `
+                    <div class="fiado-card" onclick="abrirModalVerFiado('${fiado.id}')">
+                        <div class="fiado-header">
+                            <strong>${fiado.nome}</strong>
+                            <span class="fiado-valor">R$ ${fiado.pendente.toFixed(2)}</span>
+                        </div>
+                        <div style="font-size: 13px; color: #666;">
+                            Total: R$ ${fiado.total.toFixed(2)} | Pago: R$ ${fiado.pago.toFixed(2)}
+                        </div>
+                        <div style="font-size: 12px; color: #999; margin-top: 5px;">
+                            ${fiado.itens.length} itens
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filtrarHistorico() {
+            const busca = document.getElementById('busca-historico').value.toLowerCase();
+            const lista = document.getElementById('lista-historico');
+            
+            if (!lista) return;
+            
+            let historicoFiltrado = historico;
+            if (busca) {
+                historicoFiltrado = historico.filter(h => 
+                    h.identificador?.toLowerCase().includes(busca) ||
+                    h.itens?.some(item => item.nome.toLowerCase().includes(busca))
+                );
+            }
+            
+            lista.innerHTML = '';
+            
+            if (historicoFiltrado.length === 0) {
+                lista.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Nenhum registro no histórico</p>';
+                return;
+            }
+            
+            historicoFiltrado.forEach(reg => {
+                lista.innerHTML += `
+                    <div class="historico-card">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong>${reg.identificador || 'Cliente'}</strong>
+                            <span style="color: #27ae60;">R$ ${reg.valor.toFixed(2)}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #666;">
+                            ${new Date(reg.data).toLocaleString()}
+                        </div>
+                        ${reg.itens ? `
+                            <div style="margin-top: 5px; font-size: 12px;">
+                                ${reg.itens.map(item => `${item.nome} x${item.quantidade}`).join(', ')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        // FUNÇÕES DE UI
+        function mostrarPainel(painel) {
+            document.querySelectorAll('.menu button').forEach(btn => btn.classList.remove('ativo'));
+            document.querySelectorAll('.painel').forEach(p => p.classList.remove('ativo'));
+            
+            document.getElementById(`btn-${painel}`).classList.add('ativo');
+            document.getElementById(`painel-${painel}`).classList.add('ativo');
+            
+            if (painel === 'mesas') filtrarMesas();
+            if (painel === 'pagamento') filtrarPagamento();
+            if (painel === 'fiados') filtrarFiados();
+            if (painel === 'historico') filtrarHistorico();
+        }
+
+        function filtrarCardapio() {
+            const busca = document.getElementById('busca').value.toLowerCase();
+            const lista = document.getElementById('lista-cardapio');
+            const semResultado = document.getElementById('sem-resultado');
+            
+            let produtosFiltrados = cardapio;
+            if (busca) {
+                produtosFiltrados = cardapio.filter(p => 
+                    p.nome.toLowerCase().includes(busca)
+                );
+            }
+            
+            lista.innerHTML = '';
+            
+            if (produtosFiltrados.length === 0) {
+                semResultado.style.display = 'block';
+            } else {
+                semResultado.style.display = 'none';
+                produtosFiltrados.forEach(produto => {
+                    const div = document.createElement('div');
+                    div.className = 'produto-card';
+                    div.innerHTML = `
+                        <div class="produto-info">
+                            <h3>${produto.nome}</h3>
+                            <span>R$ ${produto.preco.toFixed(2)}</span>
+                        </div>
+                        <div class="produto-acoes">
+                            <input type="number" id="qtd-${produto.id}" value="1" min="1" style="width: 55px;">
+                            <button onclick="adicionarPedido('${produto.id}')">+</button>
+                        </div>
+                    `;
+                    lista.appendChild(div);
+                });
+            }
+        }
+
+        // SALVAR PRODUTO
+        async function salvarProduto() {
+            const nome = document.getElementById('produto-nome').value;
+            const preco = parseFloat(document.getElementById('produto-preco').value);
+            
+            if (!nome || !preco) {
+                alert('Preencha nome e preço!');
+                return;
+            }
+            
+            try {
+                if (produtoEditando) {
+                    await db.collection('cardapio').doc(produtoEditando).update({
+                        nome: nome,
+                        preco: preco
+                    });
+                } else {
+                    await db.collection('cardapio').add({
+                        nome: nome,
+                        preco: preco
+                    });
+                }
+                
+                fecharModalProduto();
+                await carregarCardapio();
+                
+            } catch (error) {
+                console.error('Erro ao salvar produto:', error);
+                alert('Erro ao salvar produto');
+            }
+        }
+
+        async function excluirProduto(id) {
+            try {
+                await db.collection('cardapio').doc(id).delete();
+                await carregarCardapio();
+                
+                if (document.getElementById('modal-editar').style.display === 'block') {
+                    abrirModalEditarCardapio();
+                }
+                
+                alert('Produto excluído com sucesso!');
+            } catch (error) {
+                console.error('Erro ao excluir produto:', error);
+                alert('Erro ao excluir produto');
+            }
+        }
+
+        // FUNÇÕES DE MODAL
+        function abrirModalProduto() {
+            produtoEditando = null;
+            document.getElementById('titulo-modal').textContent = 'Novo Produto';
+            document.getElementById('produto-nome').value = '';
+            document.getElementById('produto-preco').value = '';
+            document.getElementById('modal-produto').style.display = 'block';
+        }
+
+        function fecharModalProduto() {
+            document.getElementById('modal-produto').style.display = 'none';
+        }
+
+        function abrirModalEditarCardapio() {
+            const listaEditavel = document.getElementById('lista-editavel');
+            listaEditavel.innerHTML = '';
+            
+            const cardapioOrdenado = [...cardapio].sort((a, b) => a.nome.localeCompare(b.nome));
+            
+            cardapioOrdenado.forEach(produto => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee;';
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.innerHTML = `<strong>${produto.nome}</strong><br><small>R$ ${produto.preco.toFixed(2)}</small>`;
+                
+                const botoesDiv = document.createElement('div');
+                botoesDiv.style.display = 'flex';
+                botoesDiv.style.gap = '8px';
+                
+                const btnEditar = document.createElement('button');
+                btnEditar.textContent = 'Editar';
+                btnEditar.style.cssText = 'background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px;';
+                btnEditar.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    produtoEditando = produto.id;
+                    document.getElementById('titulo-modal').textContent = 'Editar Produto';
+                    document.getElementById('produto-nome').value = produto.nome;
+                    document.getElementById('produto-preco').value = produto.preco;
+                    document.getElementById('modal-editar').style.display = 'none';
+                    document.getElementById('modal-produto').style.display = 'block';
+                };
+                
+                const btnExcluir = document.createElement('button');
+                btnExcluir.textContent = 'Excluir';
+                btnExcluir.style.cssText = 'background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px;';
+                btnExcluir.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (confirm('Tem certeza que quer excluir este produto?')) {
+                        excluirProduto(produto.id);
+                    }
+                };
+                
+                botoesDiv.appendChild(btnEditar);
+                botoesDiv.appendChild(btnExcluir);
+                
+                div.appendChild(infoDiv);
+                div.appendChild(botoesDiv);
+                
+                listaEditavel.appendChild(div);
+            });
+            
+            document.getElementById('modal-editar').style.display = 'block';
+        }
+
+        function fecharModalEditar() {
+            document.getElementById('modal-editar').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
