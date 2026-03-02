@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Lanchonete da Tuca</title>
-    <!-- Firebase -->
+    <!-- banco de dados - Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
@@ -296,7 +296,7 @@
             margin: 0;
         }
         
-        /* Checkbox - CORRIGIDO */
+        /* Checkbox - produto verificado */
         input[type="checkbox"] {
             width: 24px !important;
             height: 24px !important;
@@ -346,7 +346,7 @@
             transition: all 0.3s;
         }
         
-        /* Efeito para mesas pagas (bloqueado/desbotado) */
+        /* Efeito para mesas pagas */
         .mesa-card.mesa-paga {
             opacity: 0.5;
             background: #f5f5f5;
@@ -461,6 +461,7 @@
         .pendente { background: #e74c3c; color: white; }
         .parcial { background: #f39c12; color: white; }
         
+        /* Fiado com data de vencimento */
         .fiado-card {
             background: #f8f8f8;
             padding: 15px;
@@ -469,6 +470,12 @@
             border-left: 4px solid #f39c12;
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        
+        .fiado-card.vencido {
+            border-left-color: #e74c3c;
+            background: #ffeeee;
         }
         
         .fiado-card:active {
@@ -486,6 +493,31 @@
         .fiado-valor {
             font-weight: bold;
             color: #e74c3c;
+        }
+        
+        .fiado-data {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        
+        .fiado-vencimento {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #f0f0f0;
+        }
+        
+        .fiado-vencimento.vencido {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .fiado-vencimento.hoje {
+            background: #f39c12;
+            color: white;
         }
         
         .btn-pequeno {
@@ -604,7 +636,7 @@
             <div id="lista-pagamento"></div>
         </div>
         
-        <!-- Painel Fiados -->
+        <!-- Painel Fiados - COM DATA DE VENCIMENTO -->
         <div id="painel-fiados" class="painel">
             <div class="busca">
                 <input type="text" id="busca-fiados" placeholder="🔍 Buscar cliente..." onkeyup="filtrarFiados()">
@@ -750,6 +782,7 @@
             <h3>Confirmar Fiado</h3>
             <p style="font-size: 16px; margin: 10px 0;">Cliente: <strong id="fiado-cliente-nome"></strong></p>
             <p style="font-size: 16px; margin: 10px 0;">Valor: R$ <strong id="fiado-cliente-valor"></strong></p>
+            <p style="font-size: 14px; margin: 10px 0; color: #666;">Vencimento: <strong id="fiado-vencimento-preview"></strong> (30 dias)</p>
             
             <div style="margin: 20px 0; padding: 15px; background: #f8f8f8; border-radius: 10px;">
                 <p><strong>Itens:</strong></p>
@@ -1087,7 +1120,42 @@
             }
         }
 
-        // NOVA FUNÇÃO: Marcar item como pronto
+        // Função para calcular data de vencimento (30 dias após a data atual)
+        function calcularDataVencimento() {
+            const data = new Date();
+            data.setDate(data.getDate() + 30);
+            return data.toISOString();
+        }
+
+        // Função para formatar data para exibição
+        function formatarData(dataISO) {
+            const data = new Date(dataISO);
+            return data.toLocaleDateString('pt-BR');
+        }
+
+        // Função para verificar status do vencimento
+        function getStatusVencimento(dataVencimento) {
+            const hoje = new Date();
+            const vencimento = new Date(dataVencimento);
+            
+            // Zera as horas para comparar apenas datas
+            hoje.setHours(0, 0, 0, 0);
+            vencimento.setHours(0, 0, 0, 0);
+            
+            const diffDias = Math.floor((vencimento - hoje) / (1000 * 60 * 60 * 24));
+            
+            if (diffDias < 0) {
+                return { classe: 'vencido', texto: 'Vencido' };
+            } else if (diffDias === 0) {
+                return { classe: 'hoje', texto: 'Vence hoje' };
+            } else if (diffDias <= 5) {
+                return { classe: 'hoje', texto: `Vence em ${diffDias} dias` };
+            } else {
+                return { classe: '', texto: `Vence em ${diffDias} dias` };
+            }
+        }
+
+        //  Marcar item como pronto
         async function marcarItemPronto(mesaId, itemIndex) {
             try {
                 const mesa = mesas.find(m => m.id === mesaId);
@@ -1180,7 +1248,7 @@
                     tamanho: tamanho,
                     data: new Date().toISOString(),
                     pago: false,
-                    pronto: false // NOVO: status de pronto
+                    pronto: false
                 };
                 
                 pessoa.itens.push(novoItem);
@@ -1266,7 +1334,7 @@
                     tamanho: tamanho,
                     data: new Date().toISOString(),
                     pago: false,
-                    pronto: false // NOVO: status de pronto
+                    pronto: false
                 };
                 
                 pessoa.itens.push(novoItem);
@@ -1370,7 +1438,7 @@
             mesaSelecionada = null;
         }
 
-        // FUNÇÃO: MARCAR COMO FIADO
+        // FUNÇÃO: MARCAR COMO FIADO (COM DATA DE VENCIMENTO)
         function marcarComoFiado() {
             if (!mesaSelecionada) return;
             
@@ -1395,6 +1463,11 @@
             document.getElementById('fiado-cliente-nome').textContent = mesaSelecionada.identificador;
             document.getElementById('fiado-cliente-valor').textContent = pendente.toFixed(2);
             
+            // Calcula e mostra a data de vencimento
+            const dataVencimento = calcularDataVencimento();
+            const dataFormatada = formatarData(dataVencimento);
+            document.getElementById('fiado-vencimento-preview').textContent = dataFormatada;
+            
             const itensResumo = document.getElementById('itens-fiado-resumo');
             itensResumo.innerHTML = '';
             itensPendentes.forEach(item => {
@@ -1414,6 +1487,9 @@
             if (!fiadoTemp) return;
             
             try {
+                // Calcula data de vencimento (30 dias após hoje)
+                const dataVencimento = calcularDataVencimento();
+                
                 await db.collection('fiados').add({
                     nome: fiadoTemp.identificador,
                     itens: fiadoTemp.itens,
@@ -1421,6 +1497,7 @@
                     pago: 0,
                     pendente: fiadoTemp.valor,
                     data: new Date().toISOString(),
+                    dataVencimento: dataVencimento, // NOVO: data de vencimento
                     origemMesa: fiadoTemp.mesaId,
                     historico: [{
                         tipo: 'fiado',
@@ -1536,7 +1613,7 @@
             }
         }
 
-        // FUNÇÕES DE FIADO
+        // FUNÇÕES DE FIADO (COM DATA DE VENCIMENTO)
         function abrirModalVerFiado(fiadoId) {
             fiadoSelecionado = fiados.find(f => f.id === fiadoId);
             if (!fiadoSelecionado) return;
@@ -1555,11 +1632,16 @@
                 `;
             });
             
+            // Mostra data de vencimento
+            const statusVenc = getStatusVencimento(fiadoSelecionado.dataVencimento);
+            
             detalhes.innerHTML += `
                 <div style="margin-top: 15px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
                     <p><strong>Total:</strong> R$ ${fiadoSelecionado.total.toFixed(2)}</p>
                     <p><strong>Pago:</strong> R$ ${fiadoSelecionado.pago.toFixed(2)}</p>
                     <p><strong>Pendente:</strong> R$ ${fiadoSelecionado.pendente.toFixed(2)}</p>
+                    <p><strong>Data:</strong> ${formatarData(fiadoSelecionado.data)}</p>
+                    <p><strong>Vencimento:</strong> ${formatarData(fiadoSelecionado.dataVencimento)} <span class="${statusVenc.classe}" style="margin-left: 5px; padding: 2px 5px; border-radius: 3px;">${statusVenc.texto}</span></p>
                 </div>
             `;
             
@@ -1693,7 +1775,7 @@
             }
         }
 
-        // FUNÇÕES DE BUSCA - COM STATUS DE PRONTO
+        // FUNÇÕES DE BUSCA
         function filtrarMesas() {
             const busca = document.getElementById('busca-mesas').value.toLowerCase();
             const lista = document.getElementById('lista-mesas');
@@ -1737,7 +1819,6 @@
                     pessoa.itens.forEach((item, index) => {
                         const itemClass = item.pago ? 'item-lista item-pago' : 'item-lista';
                         
-                        // Status do item (pronto ou não)
                         let statusHtml = '';
                         if (!item.pago) {
                             if (item.pronto) {
@@ -1845,6 +1926,7 @@
             });
         }
 
+        // FUNÇÃO FILTRAR FIADOS - ATUALIZADA COM DATA DE VENCIMENTO
         function filtrarFiados() {
             const busca = document.getElementById('busca-fiados').value.toLowerCase();
             const lista = document.getElementById('lista-fiados');
@@ -1866,14 +1948,21 @@
             }
             
             fiadosFiltrados.forEach(fiado => {
+                const statusVenc = getStatusVencimento(fiado.dataVencimento);
+                const classeVencida = statusVenc.classe === 'vencido' ? 'vencido' : '';
+                
                 lista.innerHTML += `
-                    <div class="fiado-card" onclick="abrirModalVerFiado('${fiado.id}')">
+                    <div class="fiado-card ${classeVencida}" onclick="abrirModalVerFiado('${fiado.id}')">
                         <div class="fiado-header">
                             <strong>${fiado.nome}</strong>
                             <span class="fiado-valor">R$ ${fiado.pendente.toFixed(2)}</span>
                         </div>
                         <div style="font-size: 13px; color: #666;">
                             Total: R$ ${fiado.total.toFixed(2)} | Pago: R$ ${fiado.pago.toFixed(2)}
+                        </div>
+                        <div class="fiado-data">
+                            <span>📅 ${formatarData(fiado.data)}</span>
+                            <span class="fiado-vencimento ${statusVenc.classe}">⏰ ${statusVenc.texto}</span>
                         </div>
                         <div style="font-size: 12px; color: #999; margin-top: 5px;">
                             ${fiado.itens.length} itens
