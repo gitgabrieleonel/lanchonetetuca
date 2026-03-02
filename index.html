@@ -117,6 +117,7 @@
             justify-content: space-between;
             align-items: center;
             border: 1px solid #eee;
+            flex-wrap: wrap;
         }
         
         .produto-info h3 { 
@@ -130,10 +131,26 @@
             font-size: 16px;
         }
         
+        .produto-tamanhos {
+            font-size: 13px;
+            color: #666;
+            margin-top: 3px;
+        }
+        
         .produto-acoes {
             display: flex;
             gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .produto-acoes select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            min-width: 70px;
         }
         
         .produto-acoes input {
@@ -180,6 +197,7 @@
         .btn-verde { background: #27ae60; color: white; }
         .btn-azul { background: #3498db; color: white; }
         .btn-laranja { background: #f39c12; color: white; }
+        .btn-cinza { background: #95a5a6; color: white; }
         
         /* Modal */
         .modal {
@@ -212,6 +230,12 @@
             font-size: 20px;
             margin-bottom: 15px;
             color: #333;
+        }
+        
+        .modal-conteudo h4 {
+            font-size: 16px;
+            margin: 15px 0 10px 0;
+            color: #555;
         }
         
         .modal-conteudo input, 
@@ -247,7 +271,71 @@
             font-weight: bold;
         }
         
-        /* Mesas - CORRIGIDO para mostrar itens */
+        /* Tabela de tamanhos */
+        .tamanhos-table {
+            width: 100%;
+            margin: 10px 0;
+            border-collapse: collapse;
+        }
+        
+        .tamanhos-table th {
+            background: #f0f0f0;
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        .tamanhos-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .tamanhos-table input {
+            width: 100px;
+            padding: 8px;
+            margin: 0;
+        }
+        
+        /* Checkbox - CORRIGIDO */
+        input[type="checkbox"] {
+            width: 24px !important;
+            height: 24px !important;
+            margin: 0 10px 0 0 !important;
+            padding: 0 !important;
+            accent-color: #3498db;
+            -webkit-appearance: checkbox !important;
+            appearance: checkbox !important;
+            opacity: 1 !important;
+            position: relative !important;
+            display: inline-block !important;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        #itens-pagamento input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+        }
+        
+        /* Opção para ativar tamanhos */
+        .opcao-tamanhos {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 8px;
+        }
+        
+        .opcao-tamanhos input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin: 0 !important;
+        }
+        
+        /* Mesas */
         .mesa-card {
             border: 1px solid #ddd;
             border-radius: 15px;
@@ -264,11 +352,11 @@
             background: #f5f5f5;
             border-color: #ccc;
             filter: grayscale(30%);
-            pointer-events: none; /* Desabilita interação */
+            pointer-events: none;
         }
         
         .mesa-card.mesa-paga .btn-pequeno {
-            pointer-events: none; /* Botões também desabilitados */
+            pointer-events: none;
             background: #ccc !important;
         }
         
@@ -289,12 +377,59 @@
             align-items: center;
         }
         
+        /* Item da lista com status de pronto */
         .item-lista {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 10px 0;
             font-size: 15px;
             border-bottom: 1px dashed #eee;
+        }
+        
+        .item-info {
+            flex: 1;
+        }
+        
+        .item-status {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .item-pronto {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .item-pendente {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .btn-pronto {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .btn-pronto:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.5;
         }
         
         .item-pago {
@@ -403,7 +538,7 @@
         }
         
         input, select {
-            font-size: 16px !important; /* Evita zoom automático no iOS */
+            font-size: 16px !important;
         }
         
         /* Indicador de mesa paga */
@@ -453,7 +588,7 @@
             </div>
         </div>
         
-        <!-- Painel Mesas - CORRIGIDO -->
+        <!-- Painel Mesas -->
         <div id="painel-mesas" class="painel">
             <div class="busca">
                 <input type="text" id="busca-mesas" placeholder="🔍 Buscar mesa ou cliente..." onkeyup="filtrarMesas()">
@@ -486,12 +621,46 @@
         </div>
     </div>
     
-    <!-- Modal Novo Produto -->
+    <!-- Modal Novo/Editar Produto com Tamanhos -->
     <div id="modal-produto" class="modal">
         <div class="modal-conteudo">
             <h3 id="titulo-modal">Novo Produto</h3>
+            
             <input type="text" id="produto-nome" placeholder="Nome do produto">
-            <input type="number" id="produto-preco" placeholder="Preço (R$)" step="0.01">
+            
+            <!-- Opção para ativar tamanhos -->
+            <div class="opcao-tamanhos">
+                <input type="checkbox" id="produto-tem-tamanhos" onchange="toggleTamanhos()">
+                <label for="produto-tem-tamanhos">Este produto tem tamanhos (P, M, G)</label>
+            </div>
+            
+            <!-- Preço único (quando não tem tamanhos) -->
+            <div id="campo-preco-unico">
+                <input type="number" id="produto-preco" placeholder="Preço (R$)" step="0.01">
+            </div>
+            
+            <!-- Tabela de tamanhos (inicialmente oculta) -->
+            <div id="campos-tamanhos" style="display: none;">
+                <h4>Preços por tamanho:</h4>
+                <table class="tamanhos-table">
+                    <tr>
+                        <th>Tamanho</th>
+                        <th>Preço (R$)</th>
+                    </tr>
+                    <tr>
+                        <td>Pequeno (P)</td>
+                        <td><input type="number" id="preco-p" placeholder="0.00" step="0.01" value="0"></td>
+                    </tr>
+                    <tr>
+                        <td>Médio (M)</td>
+                        <td><input type="number" id="preco-m" placeholder="0.00" step="0.01" value="0"></td>
+                    </tr>
+                    <tr>
+                        <td>Grande (G)</td>
+                        <td><input type="number" id="preco-g" placeholder="0.00" step="0.01" value="0"></td>
+                    </tr>
+                </table>
+            </div>
             
             <div class="modal-botoes">
                 <button onclick="fecharModalProduto()" style="background: #95a5a6; color: white;">Cancelar</button>
@@ -509,7 +678,7 @@
         </div>
     </div>
     
-    <!-- Modal Adicionar Item à Mesa - CORRIGIDO -->
+    <!-- Modal Adicionar Item à Mesa -->
     <div id="modal-add-item-mesa" class="modal">
         <div class="modal-conteudo">
             <h3>Adicionar Item à Mesa</h3>
@@ -519,9 +688,18 @@
                 <input type="text" id="busca-produto-mesa" placeholder="🔍 Buscar produto..." onkeyup="filtrarProdutosMesa()">
             </div>
             
-            <select id="select-produto-mesa" size="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; margin-bottom: 10px;">
+            <select id="select-produto-mesa" size="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; margin-bottom: 10px;" onchange="atualizarSelectTamanhoMesa()">
                 <option value="">Selecione um produto</option>
             </select>
+            
+            <!-- Select de tamanho (aparece apenas se o produto tiver tamanhos) -->
+            <div id="container-tamanho-mesa" style="display: none; margin-bottom: 10px;">
+                <select id="tamanho-mesa" style="width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px;">
+                    <option value="P">Pequeno (P)</option>
+                    <option value="M">Médio (M)</option>
+                    <option value="G">Grande (G)</option>
+                </select>
+            </div>
             
             <input type="number" id="quantidade-mesa" placeholder="Quantidade" min="1" value="1" style="width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 15px;">
             
@@ -743,11 +921,35 @@
 
         async function criarProdutosIniciais() {
             const produtosIniciais = [
-                { nome: 'X-Burger', preco: 15.00 },
-                { nome: 'X-Salada', preco: 18.00 },
-                { nome: 'X-Bacon', preco: 20.00 },
-                { nome: 'Batata', preco: 12.00 },
-                { nome: 'Refri', preco: 6.00 }
+                { 
+                    nome: 'X-Burger', 
+                    preco: 15.00,
+                    temTamanhos: false
+                },
+                { 
+                    nome: 'X-Salada', 
+                    preco: 18.00,
+                    temTamanhos: false
+                },
+                { 
+                    nome: 'Macarrão', 
+                    temTamanhos: true,
+                    tamanhos: {
+                        P: 20.00,
+                        M: 25.00,
+                        G: 30.00
+                    }
+                },
+                { 
+                    nome: 'Batata', 
+                    preco: 12.00,
+                    temTamanhos: false
+                },
+                { 
+                    nome: 'Refri', 
+                    preco: 6.00,
+                    temTamanhos: false
+                }
             ];
             
             for (let produto of produtosIniciais) {
@@ -785,7 +987,15 @@
                 produtosFiltrados.forEach(produto => {
                     const option = document.createElement('option');
                     option.value = produto.id;
-                    option.textContent = `${produto.nome} - R$ ${produto.preco.toFixed(2)}`;
+                    
+                    let texto = produto.nome;
+                    if (produto.temTamanhos) {
+                        texto += ' (P/M/G)';
+                    } else {
+                        texto += ` - R$ ${produto.preco.toFixed(2)}`;
+                    }
+                    
+                    option.textContent = texto;
                     select.appendChild(option);
                 });
             }
@@ -814,7 +1024,15 @@
                 produtosFiltrados.forEach(produto => {
                     const option = document.createElement('option');
                     option.value = produto.id;
-                    option.textContent = `${produto.nome} - R$ ${produto.preco.toFixed(2)}`;
+                    
+                    let texto = produto.nome;
+                    if (produto.temTamanhos) {
+                        texto += ' (P/M/G)';
+                    } else {
+                        texto += ` - R$ ${produto.preco.toFixed(2)}`;
+                    }
+                    
+                    option.textContent = texto;
                     select.appendChild(option);
                 });
             }
@@ -830,16 +1048,96 @@
             atualizarSelectProdutosFiado(busca);
         }
 
-        // ADICIONAR PEDIDO
-        async function adicionarPedido(produtoId) {
+        // Função para atualizar select de tamanho no modal de adicionar item
+        function atualizarSelectTamanhoMesa() {
+            const produtoId = document.getElementById('select-produto-mesa').value;
+            if (!produtoId) {
+                document.getElementById('container-tamanho-mesa').style.display = 'none';
+                return;
+            }
+            
+            const produto = cardapio.find(p => p.id === produtoId);
+            if (produto && produto.temTamanhos) {
+                document.getElementById('container-tamanho-mesa').style.display = 'block';
+            } else {
+                document.getElementById('container-tamanho-mesa').style.display = 'none';
+            }
+        }
+
+        // Função para obter preço do produto baseado no tamanho
+        function getPrecoProduto(produto, tamanho = null) {
+            if (!produto) return 0;
+            
+            if (produto.temTamanhos && tamanho) {
+                return produto.tamanhos[tamanho] || 0;
+            } else {
+                return produto.preco || 0;
+            }
+        }
+
+        // Função para formatar descrição do item com tamanho
+        function getDescricaoItem(produto, tamanho = null) {
+            if (!produto) return '';
+            
+            if (produto.temTamanhos && tamanho) {
+                let tamanhoExtenso = tamanho === 'P' ? 'Pequeno' : tamanho === 'M' ? 'Médio' : 'Grande';
+                return `${produto.nome} (${tamanhoExtenso})`;
+            } else {
+                return produto.nome;
+            }
+        }
+
+        // NOVA FUNÇÃO: Marcar item como pronto
+        async function marcarItemPronto(mesaId, itemIndex) {
+            try {
+                const mesa = mesas.find(m => m.id === mesaId);
+                if (!mesa) return;
+                
+                const pessoa = mesa.pessoas[0];
+                const item = pessoa.itens[itemIndex];
+                
+                if (item.pronto) {
+                    alert('Item já está marcado como pronto!');
+                    return;
+                }
+                
+                // Atualiza localmente
+                item.pronto = true;
+                item.dataPronto = new Date().toISOString();
+                
+                // Atualiza no Firebase
+                await db.collection('mesas').doc(mesaId).update({
+                    pessoas: mesa.pessoas
+                });
+                
+                // Recarrega a lista
+                await carregarMesas();
+                
+            } catch (error) {
+                console.error('Erro ao marcar item como pronto:', error);
+                alert('Erro ao atualizar status do item');
+            }
+        }
+
+        // ADICIONAR PEDIDO (COM TAMANHOS E STATUS)
+        async function adicionarPedido(produtoId, tamanho = null) {
             const identificador = document.getElementById('identificador').value.trim();
             if (!identificador) {
                 alert('Digite o nome da pessoa ou mesa!');
                 return;
             }
             
-            const quantidade = parseInt(document.getElementById(`qtd-${produtoId}`).value);
+            const qtdInput = document.getElementById(`qtd-${produtoId}`);
+            if (!qtdInput) return;
+            
+            const quantidade = parseInt(qtdInput.value);
             const produto = cardapio.find(p => p.id === produtoId);
+            
+            if (produto.temTamanhos && !tamanho) {
+                tamanho = 'P';
+            }
+            
+            const precoUnitario = getPrecoProduto(produto, tamanho);
             
             try {
                 let mesa = mesas.find(m => m.identificador === identificador);
@@ -872,29 +1170,34 @@
                 }
                 
                 const pessoa = mesa.pessoas[0];
+                const descricao = getDescricaoItem(produto, tamanho);
+                
                 const novoItem = {
-                    nome: produto.nome,
-                    preco: produto.preco,
+                    nome: descricao,
+                    preco: precoUnitario,
                     quantidade: quantidade,
                     produtoId: produtoId,
+                    tamanho: tamanho,
                     data: new Date().toISOString(),
-                    pago: false
+                    pago: false,
+                    pronto: false // NOVO: status de pronto
                 };
                 
                 pessoa.itens.push(novoItem);
                 
-                const valorItem = produto.preco * quantidade;
+                const valorItem = precoUnitario * quantidade;
                 pessoa.total += valorItem;
                 mesa.total += valorItem;
                 
                 await db.collection('vendas').add({
                     identificador: identificador,
-                    produto: produto.nome,
+                    produto: descricao,
                     quantidade: quantidade,
-                    valorUnitario: produto.preco,
+                    valorUnitario: precoUnitario,
                     valorTotal: valorItem,
                     data: new Date().toISOString(),
-                    mesaId: mesaId
+                    mesaId: mesaId,
+                    tamanho: tamanho
                 });
                 
                 await db.collection('mesas').doc(mesaId).update({
@@ -902,8 +1205,8 @@
                     total: mesa.total
                 });
                 
-                alert(`✅ Adicionado: ${quantidade}x ${produto.nome} para ${identificador}`);
-                document.getElementById(`qtd-${produtoId}`).value = 1;
+                alert(`✅ Adicionado: ${quantidade}x ${descricao} para ${identificador}`);
+                qtdInput.value = 1;
                 
                 await carregarMesas();
                 
@@ -913,7 +1216,7 @@
             }
         }
 
-        // FUNÇÕES DE MESA - ADICIONAR ITEM
+        // FUNÇÕES DE MESA - ADICIONAR ITEM (COM TAMANHOS E STATUS)
         function abrirModalAddItem(mesaId) {
             mesaSelecionada = mesas.find(m => m.id === mesaId);
             if (!mesaSelecionada) return;
@@ -921,6 +1224,7 @@
             document.getElementById('mesa-info').textContent = `Mesa: ${mesaSelecionada.identificador}`;
             document.getElementById('busca-produto-mesa').value = '';
             atualizarSelectProdutosMesa();
+            document.getElementById('container-tamanho-mesa').style.display = 'none';
             document.getElementById('quantidade-mesa').value = '1';
             document.getElementById('modal-add-item-mesa').style.display = 'block';
         }
@@ -942,21 +1246,32 @@
             }
             
             const produto = cardapio.find(p => p.id === produtoId);
+            let tamanho = null;
+            
+            if (produto.temTamanhos) {
+                tamanho = document.getElementById('tamanho-mesa').value;
+            }
+            
+            const precoUnitario = getPrecoProduto(produto, tamanho);
             
             try {
                 const pessoa = mesaSelecionada.pessoas[0];
+                const descricao = getDescricaoItem(produto, tamanho);
+                
                 const novoItem = {
-                    nome: produto.nome,
-                    preco: produto.preco,
+                    nome: descricao,
+                    preco: precoUnitario,
                     quantidade: quantidade,
                     produtoId: produtoId,
+                    tamanho: tamanho,
                     data: new Date().toISOString(),
-                    pago: false
+                    pago: false,
+                    pronto: false // NOVO: status de pronto
                 };
                 
                 pessoa.itens.push(novoItem);
                 
-                const valorItem = produto.preco * quantidade;
+                const valorItem = precoUnitario * quantidade;
                 pessoa.total += valorItem;
                 mesaSelecionada.total += valorItem;
                 
@@ -967,12 +1282,13 @@
                 
                 await db.collection('vendas').add({
                     identificador: mesaSelecionada.identificador,
-                    produto: produto.nome,
+                    produto: descricao,
                     quantidade: quantidade,
-                    valorUnitario: produto.preco,
+                    valorUnitario: precoUnitario,
                     valorTotal: valorItem,
                     data: new Date().toISOString(),
-                    mesaId: mesaSelecionada.id
+                    mesaId: mesaSelecionada.id,
+                    tamanho: tamanho
                 });
                 
                 fecharModalAddItem();
@@ -1008,13 +1324,16 @@
                     itemDiv.style.margin = '8px 0';
                     itemDiv.style.padding = '5px';
                     itemDiv.style.borderBottom = '1px solid #eee';
+                    itemDiv.style.display = 'flex';
+                    itemDiv.style.alignItems = 'center';
+                    itemDiv.style.gap = '10px';
+                    
                     itemDiv.innerHTML = `
-                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px;">
-                            <input type="checkbox" class="item-pagamento" data-index="${index}" data-valor="${item.preco * item.quantidade}" onchange="atualizarResumoPagamento()" style="width: 20px; height: 20px;">
-                            <span style="flex: 1;">${item.nome} x${item.quantidade}</span>
-                            <span style="font-weight: bold; color: #27ae60;">R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
-                        </label>
+                        <input type="checkbox" class="item-pagamento" data-index="${index}" data-valor="${item.preco * item.quantidade}" onchange="atualizarResumoPagamento()">
+                        <span style="flex: 1;">${item.nome} x${item.quantidade}</span>
+                        <span style="font-weight: bold; color: #27ae60;">R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
                     `;
+                    
                     itensDiv.appendChild(itemDiv);
                 }
             });
@@ -1269,16 +1588,26 @@
             }
             
             const produto = cardapio.find(p => p.id === produtoId);
-            const valorItem = produto.preco * quantidade;
+            
+            let precoUnitario = produto.preco || 0;
+            let descricao = produto.nome;
+            
+            if (produto.temTamanhos) {
+                precoUnitario = produto.tamanhos.P || 0;
+                descricao = `${produto.nome} (Pequeno)`;
+            }
+            
+            const valorItem = precoUnitario * quantidade;
             
             try {
                 const novoItem = {
                     produtoId: produto.id,
-                    nome: produto.nome,
-                    preco: produto.preco,
+                    nome: descricao,
+                    preco: precoUnitario,
                     quantidade: quantidade,
                     data: new Date().toISOString(),
-                    pago: false
+                    pago: false,
+                    pronto: false
                 };
                 
                 fiadoSelecionado.itens.push(novoItem);
@@ -1290,7 +1619,7 @@
                     tipo: 'adicao',
                     data: new Date().toISOString(),
                     valor: valorItem,
-                    item: produto.nome,
+                    item: descricao,
                     quantidade: quantidade
                 });
                 
@@ -1364,7 +1693,7 @@
             }
         }
 
-        // FUNÇÕES DE BUSCA - CORRIGIDAS para mostrar itens
+        // FUNÇÕES DE BUSCA - COM STATUS DE PRONTO
         function filtrarMesas() {
             const busca = document.getElementById('busca-mesas').value.toLowerCase();
             const lista = document.getElementById('lista-mesas');
@@ -1391,7 +1720,6 @@
                 const pendente = pessoa.total - pago;
                 const todosPagos = pendente <= 0;
                 
-                // Classe especial para mesas pagas
                 const classeMesa = todosPagos ? 'mesa-card mesa-paga' : 'mesa-card';
                 
                 let html = `
@@ -1405,14 +1733,32 @@
                         </div>
                 `;
                 
-                // MOSTRAR ITENS - CORRIGIDO
                 if (pessoa.itens && pessoa.itens.length > 0) {
-                    pessoa.itens.forEach(item => {
+                    pessoa.itens.forEach((item, index) => {
                         const itemClass = item.pago ? 'item-lista item-pago' : 'item-lista';
+                        
+                        // Status do item (pronto ou não)
+                        let statusHtml = '';
+                        if (!item.pago) {
+                            if (item.pronto) {
+                                statusHtml = `<span class="item-pronto">✅ Pronto</span>`;
+                            } else {
+                                statusHtml = `
+                                    <span class="item-pendente">⏳ Preparando</span>
+                                    <button class="btn-pronto" onclick="marcarItemPronto('${mesa.id}', ${index})">Marcar Pronto</button>
+                                `;
+                            }
+                        }
+                        
                         html += `
                             <div class="${itemClass}">
-                                <span>${item.nome} x${item.quantidade}</span>
-                                <span>R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+                                <div class="item-info">
+                                    <span>${item.nome} x${item.quantidade}</span>
+                                    <span>R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+                                </div>
+                                <div class="item-status">
+                                    ${statusHtml}
+                                </div>
                             </div>
                         `;
                     });
@@ -1485,9 +1831,10 @@
                 `;
                 
                 pessoa.itens.forEach(item => {
+                    let statusIcon = item.pronto ? '✅ ' : '⏳ ';
                     html += `
                         <div class="item-lista">
-                            <span>${item.nome} x${item.quantidade} ${item.pago ? '(Pago)' : ''}</span>
+                            <span>${statusIcon}${item.nome} x${item.quantidade} ${item.pago ? '(Pago)' : ''}</span>
                             <span style="${item.pago ? 'color: #27ae60;' : ''}">R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
                         </div>
                     `;
@@ -1612,14 +1959,40 @@
                 produtosFiltrados.forEach(produto => {
                     const div = document.createElement('div');
                     div.className = 'produto-card';
+                    
+                    let precosHtml = '';
+                    if (produto.temTamanhos) {
+                        precosHtml = `
+                            <div class="produto-tamanhos">
+                                P: R$ ${produto.tamanhos.P.toFixed(2)} | 
+                                M: R$ ${produto.tamanhos.M.toFixed(2)} | 
+                                G: R$ ${produto.tamanhos.G.toFixed(2)}
+                            </div>
+                        `;
+                    } else {
+                        precosHtml = `<span>R$ ${produto.preco.toFixed(2)}</span>`;
+                    }
+                    
+                    let selectTamanho = '';
+                    if (produto.temTamanhos) {
+                        selectTamanho = `
+                            <select id="tamanho-${produto.id}" style="padding: 8px; border: 1px solid #ccc; border-radius: 5px;">
+                                <option value="P">P</option>
+                                <option value="M">M</option>
+                                <option value="G">G</option>
+                            </select>
+                        `;
+                    }
+                    
                     div.innerHTML = `
                         <div class="produto-info">
                             <h3>${produto.nome}</h3>
-                            <span>R$ ${produto.preco.toFixed(2)}</span>
+                            ${precosHtml}
                         </div>
                         <div class="produto-acoes">
+                            ${selectTamanho}
                             <input type="number" id="qtd-${produto.id}" value="1" min="1" style="width: 55px;">
-                            <button onclick="adicionarPedido('${produto.id}')">+</button>
+                            <button onclick="adicionarPedido('${produto.id}', document.getElementById('tamanho-${produto.id}')?.value)">+</button>
                         </div>
                     `;
                     lista.appendChild(div);
@@ -1627,27 +2000,65 @@
             }
         }
 
-        // SALVAR PRODUTO
+        // Funções para gerenciar tamanhos no modal de produto
+        function toggleTamanhos() {
+            const temTamanhos = document.getElementById('produto-tem-tamanhos').checked;
+            const campoPrecoUnico = document.getElementById('campo-preco-unico');
+            const camposTamanhos = document.getElementById('campos-tamanhos');
+            
+            if (temTamanhos) {
+                campoPrecoUnico.style.display = 'none';
+                camposTamanhos.style.display = 'block';
+            } else {
+                campoPrecoUnico.style.display = 'block';
+                camposTamanhos.style.display = 'none';
+            }
+        }
+
+        // SALVAR PRODUTO (COM TAMANHOS)
         async function salvarProduto() {
             const nome = document.getElementById('produto-nome').value;
-            const preco = parseFloat(document.getElementById('produto-preco').value);
+            const temTamanhos = document.getElementById('produto-tem-tamanhos').checked;
             
-            if (!nome || !preco) {
-                alert('Preencha nome e preço!');
+            if (!nome) {
+                alert('Digite o nome do produto!');
                 return;
             }
             
             try {
-                if (produtoEditando) {
-                    await db.collection('cardapio').doc(produtoEditando).update({
-                        nome: nome,
-                        preco: preco
-                    });
+                let produtoData = {
+                    nome: nome,
+                    temTamanhos: temTamanhos
+                };
+                
+                if (temTamanhos) {
+                    const precoP = parseFloat(document.getElementById('preco-p').value);
+                    const precoM = parseFloat(document.getElementById('preco-m').value);
+                    const precoG = parseFloat(document.getElementById('preco-g').value);
+                    
+                    if (!precoP || !precoM || !precoG) {
+                        alert('Preencha todos os preços dos tamanhos!');
+                        return;
+                    }
+                    
+                    produtoData.tamanhos = {
+                        P: precoP,
+                        M: precoM,
+                        G: precoG
+                    };
                 } else {
-                    await db.collection('cardapio').add({
-                        nome: nome,
-                        preco: preco
-                    });
+                    const preco = parseFloat(document.getElementById('produto-preco').value);
+                    if (!preco) {
+                        alert('Digite o preço do produto!');
+                        return;
+                    }
+                    produtoData.preco = preco;
+                }
+                
+                if (produtoEditando) {
+                    await db.collection('cardapio').doc(produtoEditando).update(produtoData);
+                } else {
+                    await db.collection('cardapio').add(produtoData);
                 }
                 
                 fecharModalProduto();
@@ -1681,6 +2092,12 @@
             document.getElementById('titulo-modal').textContent = 'Novo Produto';
             document.getElementById('produto-nome').value = '';
             document.getElementById('produto-preco').value = '';
+            document.getElementById('produto-tem-tamanhos').checked = false;
+            document.getElementById('campo-preco-unico').style.display = 'block';
+            document.getElementById('campos-tamanhos').style.display = 'none';
+            document.getElementById('preco-p').value = '0';
+            document.getElementById('preco-m').value = '0';
+            document.getElementById('preco-g').value = '0';
             document.getElementById('modal-produto').style.display = 'block';
         }
 
@@ -1698,8 +2115,15 @@
                 const div = document.createElement('div');
                 div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee;';
                 
+                let infoHtml = `<strong>${produto.nome}</strong><br>`;
+                if (produto.temTamanhos) {
+                    infoHtml += `<small>P: R$ ${produto.tamanhos.P.toFixed(2)} | M: R$ ${produto.tamanhos.M.toFixed(2)} | G: R$ ${produto.tamanhos.G.toFixed(2)}</small>`;
+                } else {
+                    infoHtml += `<small>R$ ${produto.preco.toFixed(2)}</small>`;
+                }
+                
                 const infoDiv = document.createElement('div');
-                infoDiv.innerHTML = `<strong>${produto.nome}</strong><br><small>R$ ${produto.preco.toFixed(2)}</small>`;
+                infoDiv.innerHTML = infoHtml;
                 
                 const botoesDiv = document.createElement('div');
                 botoesDiv.style.display = 'flex';
@@ -1711,10 +2135,25 @@
                 btnEditar.onclick = function(e) {
                     e.preventDefault();
                     e.stopPropagation();
+                    
                     produtoEditando = produto.id;
                     document.getElementById('titulo-modal').textContent = 'Editar Produto';
                     document.getElementById('produto-nome').value = produto.nome;
-                    document.getElementById('produto-preco').value = produto.preco;
+                    
+                    if (produto.temTamanhos) {
+                        document.getElementById('produto-tem-tamanhos').checked = true;
+                        document.getElementById('campo-preco-unico').style.display = 'none';
+                        document.getElementById('campos-tamanhos').style.display = 'block';
+                        document.getElementById('preco-p').value = produto.tamanhos.P;
+                        document.getElementById('preco-m').value = produto.tamanhos.M;
+                        document.getElementById('preco-g').value = produto.tamanhos.G;
+                    } else {
+                        document.getElementById('produto-tem-tamanhos').checked = false;
+                        document.getElementById('campo-preco-unico').style.display = 'block';
+                        document.getElementById('campos-tamanhos').style.display = 'none';
+                        document.getElementById('produto-preco').value = produto.preco;
+                    }
+                    
                     document.getElementById('modal-editar').style.display = 'none';
                     document.getElementById('modal-produto').style.display = 'block';
                 };
